@@ -31,6 +31,7 @@ import com.google.cloud.videointelligence.v1.SpeechTranscriptionConfig;
 import com.google.cloud.videointelligence.v1.VideoAnnotationResults;
 import com.google.cloud.videointelligence.v1.VideoContext;
 import com.google.cloud.videointelligence.v1.VideoIntelligenceServiceClient;
+import com.google.cloud.videointelligence.v1.VideoIntelligenceServiceSettings;
 import com.google.cloud.videointelligence.v1.VideoSegment;
 import com.google.cloud.videointelligence.v1.WordInfo;
 import com.google.protobuf.ByteString;
@@ -39,7 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
-
+import org.threeten.bp.Duration;
 
 
 public class Detect {
@@ -340,7 +341,10 @@ public class Detect {
   public static void speechTranscription(String gcsUri) throws Exception {
     // [START video_speech_transcription_gcs]
     // Instantiate a com.google.cloud.videointelligence.v1.VideoIntelligenceServiceClient
-    try (VideoIntelligenceServiceClient client = VideoIntelligenceServiceClient.create()) {
+    VideoIntelligenceServiceSettings.Builder settings = VideoIntelligenceServiceSettings.newBuilder();
+    settings.annotateVideoSettings().getRetrySettings().toBuilder().setTotalTimeout(Duration.ofSeconds(600));
+    VideoIntelligenceServiceSettings serviceSettings = settings.build();
+    try (VideoIntelligenceServiceClient client = VideoIntelligenceServiceClient.create(serviceSettings)) {
       // Set the language code
       SpeechTranscriptionConfig config = SpeechTranscriptionConfig.newBuilder()
               .setLanguageCode("en-US")
@@ -365,7 +369,7 @@ public class Detect {
 
       System.out.println("Waiting for operation to complete...");
       // Display the results
-      for (VideoAnnotationResults results : response.get(600, TimeUnit.SECONDS)
+      for (VideoAnnotationResults results : response.get()
               .getAnnotationResultsList()) {
         for (SpeechTranscription speechTranscription : results.getSpeechTranscriptionsList()) {
           try {
